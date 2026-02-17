@@ -945,23 +945,31 @@
     data.roles = roles;
     data.submittedAt = new Date().toISOString();
 
-    // Send to Google Sheets
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwri0FYDeaw8BBEy75FT9FjKw40yeBT2s036oA1d6BtscNEpmuXpqrC8EzmGIQ0j_Y/exec';
 
-    fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    })
-    .then(() => {
+    // Use iframe + hidden form — most reliable method for Google Apps Script
+    const iframe = document.createElement('iframe');
+    iframe.name = 'hidden_iframe';
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const hiddenForm = document.createElement('form');
+    hiddenForm.method = 'POST';
+    hiddenForm.action = GOOGLE_SCRIPT_URL;
+    hiddenForm.target = 'hidden_iframe';
+
+    const payload = document.createElement('input');
+    payload.type = 'hidden';
+    payload.name = 'payload';
+    payload.value = JSON.stringify(data);
+    hiddenForm.appendChild(payload);
+
+    document.body.appendChild(hiddenForm);
+    hiddenForm.submit();
+
+    setTimeout(() => {
       document.getElementById('surveyForm').style.display = 'none';
       document.getElementById('successMessage').style.display = 'block';
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    })
-    .catch(() => {
-      btn.textContent = 'Submit My Interest →';
-      btn.disabled = false;
-      alert('Something went wrong. Please try again or email us at kingsacademy@kkm.network');
-    });
+    }, 1500);
   });
